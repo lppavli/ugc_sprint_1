@@ -1,13 +1,14 @@
 import json
 import uuid
+
 from clickhouse_driver import Client
 from kafka import KafkaConsumer, TopicPartition, OffsetAndMetadata
-
 
 from settings import Settings
 
 settings = Settings()
 MESSAGES_COUNT = settings.messages_count
+
 
 def create_table(client) -> None:
     """

@@ -12,9 +12,6 @@ class Settings(BaseSettings):
     messages_count = os.getenv('MESSAGES_COUNT', 1)
     project_name = os.getenv('PROJECT_NAME', 'api kafka')
     KAFKA_INSTANCE = f"{kafka_host}:{kafka_port}"
+
     class Config:
         env_file = ".env"
-
-
-settings = Settings()
-print(settings)
