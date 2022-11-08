@@ -1,12 +1,10 @@
-import os
-
 from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
-    kafka_host = os.getenv('KAFKA_HOST', 'localhost')
-    kafka_port = os.getenv('KAFKA_PORT', '9092')
-    jwt_secret_key = os.getenv('JWT_SECRET_KEY', 'top_secret')
+    kafka_host: str = 'localhost'
+    kafka_port: int = 9092
+    jwt_secret_key: str = 'top_secret'
 
     class Config:
         env_file = ".env"
