@@ -1,8 +1,11 @@
 import json
+import time
 import uuid
 
+import backoff as backoff
 from clickhouse_driver import Client
 from kafka import KafkaConsumer, TopicPartition, OffsetAndMetadata
+from kafka.errors import NoBrokersAvailable
 
 from settings import Settings
 
@@ -26,6 +29,7 @@ def create_table(client) -> None:
      """)
 
 
+@backoff.on_exception(backoff.expo, Exception, max_tries=3)
 def insert_in_clickhouse(client, data: list) -> None:
     """
     Inserting data in clickhouse
@@ -42,12 +46,13 @@ def insert_in_clickhouse(client, data: list) -> None:
 
 def etl(consumer: KafkaConsumer, clickhouse_client: Client) -> None:
     data = []
+    start_time = time.time()
     for message in consumer:
         one_msg = (
         str(uuid.uuid4()), *str(message.key.decode('utf-8')).split('+'),
         message.value['viewing_progress'], message.timestamp)
         data.append(one_msg)
-        if len(data) == MESSAGES_COUNT:
+        if len(data) == MESSAGES_COUNT or time.time() - start_time >= 60:
             insert_in_clickhouse(clickhouse_client, data)
             data.clear()
             tp = TopicPartition(settings.kafka_topic, message.partition)
@@ -55,6 +60,7 @@ def etl(consumer: KafkaConsumer, clickhouse_client: Client) -> None:
             consumer.commit(options)
 
 
+@backoff.on_exception(backoff.expo, NoBrokersAvailable)
 def main() -> None:
     consumer = KafkaConsumer(
         settings.kafka_topic,
